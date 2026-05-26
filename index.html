@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SUITCUBE-Stock-Request</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- นำเข้าฟอนต์ Geist สำหรับส่วนตัวเลขเวลา, Roboto สำหรับภาษาอังกฤษ, Playwrite สำหรับหัวข้อ และ Noto Sans Thai สำหรับภาษาไทย -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800;900&family=Roboto:wght@300;400;500;600;700&family=Akt:wght@300;400;500;600;700&family=Geist:wght@300;400;500;600;700;800;900&family=Playwrite+GB+J:wght@100..400&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        :root {
+            --ci-gold: #D9AE5D;
+            --ci-gold-dark: #8a632d;
+            --ci-gold-light: #fdf8ee;
+            --ci-gold-bubble: #f6ebd8;
+            --suitcube-red: #9e2a2b;
+            --suitcube-red-light: #fdf2f2;
+            --text-dark: #1e293b;
+            --bg-beige: #f4f4f0; /* Ultra clean warm-clay beige */
+            --ios-blur-bg: rgba(255, 255, 255, 0.75);
+            --bubble-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+            --bubble-shadow-hover: 0 20px 40px -5px rgba(217, 174, 93, 0.08), 0 1px 5px rgba(0,0,0,0.03);
+            --bubble-shadow-inset: inset 0 2px 4px rgba(0, 0, 0, 0.03);
+        }
+
+        body {
+            font-family: 'Noto Sans Thai', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-beige);
+            color: #334155;
+            margin: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+            letter-spacing: -0.01em;
+        }
+
+        /* ฟอนต์หัวข้อที่สวยงามตามต้นฉบับ */
+        .font-playwrite { font-family: 'Roboto', sans-serif; }
+        .font-quicksand { font-family: 'Roboto', sans-serif; }
+
+        /* เจาะจงเปลี่ยนเฉพาะเวลาขนาดใหญ่บน iOS Widget เป็นฟอนต์ Geist สไตล์เรียบหรู คมชัดสูง */
+        .font-geist-time {
+            font-family: 'Geist', -apple-system, sans-serif;
+        }
+
+        .ios-bubble-card {
+            background: var(--ios-blur-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 30px;
+            box-shadow: var(--bubble-shadow);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: visible;
+        }
+
+        .ios-bubble-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--bubble-shadow-hover);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Tactile bouncy buttons */
+        .bubble-btn {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .bubble-btn:active {
+            transform: scale(0.93);
+            filter: brightness(0.95);
+        }
+
+        /* High-fidelity custom scrollbar matching iOS */
+        .custom-scroll::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 99px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.12);
+            border-radius: 99px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.24);
+        }
+
+        /* Beautiful bubble styling for size boxes */
+        .bubble-size-input {
+            font-family: 'Roboto', sans-serif;
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 700;
+            background-color: #eef1ee;
+            border: 2px solid transparent;
+            border-radius: 50%;
+            box-shadow: var(--bubble-shadow-inset);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer;
+        }
+
+        .bubble-size-input:focus {
+            background-color: white;
+            border-color: var(--ci-gold);
+            box-shadow: 0 0 0 4px rgba(217, 174, 93, 0.15);
+            transform: scale(1.12);
+            outline: none;
+        }
+
+        /* Highlight active inputs with values */
+        .bubble-size-input.has-value {
+            background-color: var(--ci-gold-bubble);
+            color: var(--ci-gold-dark);
+            border-color: rgba(217, 174, 93, 0.3);
+            transform: scale(1.05);
+        }
+
+        /* Beautiful numeric pill box */
+        .bubble-total-badge {
+            font-family: 'Roboto', sans-serif;
+            width: 46px;
+            height: 46px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-weight: 800;
+            font-size: 16px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* iOS fluid animations */
+        @keyframes modalPop {
+            0% { transform: scale(0.9) translateY(40px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        .animate-modal {
+            animation: modalPop 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes rowInsert {
+            0% { transform: translateY(15px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        .animate-row {
+            animation: rowInsert 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Remove arrows on numeric fields */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=text][inputmode=numeric] {
+            -moz-appearance: textfield;
+        }
+
+        /* พรีเมียมเฉดสีสว่างหรูหรา ถอดแบบสีตามภาพตัวอย่าง */
+        .header-bg {
+            position: relative;
+            background: linear-gradient(135deg, 
+                #8e652a 0%, 
+                #ecdcb9 45%, 
+                #b0b8bc 100%
+            );
+        }
+
+        /* ส่วนเกรนละเอียด เพิ่มความพรีเมียมหรูหรา */
+        .header-grain {
+            position: absolute;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.12;
+            mix-blend-mode: overlay;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* การไล่ระดับสีจากเฉดสีรูปภาพด้านบนให้จางหายเข้าหาโทนพื้นหลังครีมเบจธรรมชาติอย่างนุ่มนวลสุดๆ */
+        .header-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, 
+                rgba(244, 244, 240, 0) 0%, 
+                rgba(244, 244, 240, 0.3) 30%, 
+                rgba(244, 244, 240, 0.75) 65%, 
+                #f4f4f0 100%
+            );
+            z-index: 1;
+        }
+
+        /* สไตล์หน้าต่างนาฬิกา iOS 26: สี่เหลี่ยมสีขาวใสโปร่งแสง 30% ตกแต่งขอบละมุน */
+        .ios-clock-widget {
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        /* สไตล์ไอเทมลิสต์ของอุปกรณ์เสริมแบบพรีเมียมและเรียบหรู */
+        .accessory-item-card {
+            background: rgba(255, 255, 255, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.015);
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .accessory-item-card:hover {
+            background: white;
+            border-color: rgba(217, 174, 93, 0.25);
+            transform: scale(1.02);
+            box-shadow: 0 8px 24px rgba(217, 174, 93, 0.04);
+        }
+
+        .accessory-item-card.active-filled {
+            background: var(--ci-gold-light);
+            border-color: rgba(217, 174, 93, 0.4);
+            box-shadow: 0 6px 18px rgba(217, 174, 93, 0.06);
+        }
+
+        /* SKU Autocomplete Dropdown */
+        .sku-wrapper {
+            position: relative;
+        }
+        .sku-dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            min-width: 280px;
+            background: white;
+            border: 1px solid rgba(217, 174, 93, 0.3);
+            border-radius: 16px;
+            box-shadow: 0 12px 30px -5px rgba(0,0,0,0.15);
+            max-height: 220px;
+            overflow-y: auto;
+            z-index: 9999;
+            display: none;
+        }
+        .sku-dropdown.open { display: block; }
+        .sku-dropdown-item {
+            padding: 10px 16px;
+            font-size: 14px;
+            font-family: 'Roboto', sans-serif;
+            color: #D9AE5D;
+            cursor: pointer;
+            transition: background 0.15s;
+            font-weight: 400;
+            letter-spacing: 0.01em;
+        }
+        .sku-dropdown-item:first-child { border-radius: 16px 16px 0 0; }
+        .sku-dropdown-item:last-child { border-radius: 0 0 16px 16px; }
+        .sku-dropdown-item:hover, .sku-dropdown-item.active {
+            background: var(--ci-gold-light);
+            color: var(--ci-gold-dark);
+        }
+        .sku-dropdown-empty {
+            padding: 12px 16px;
+            font-size: 13px;
+            color: #94a3b8;
+            font-family: 'Roboto', sans-serif;
+        }
+        /* ===== RESPONSIVE ===== */
+        /* Mobile (< 640px) */
+        @media (max-width: 639px) {
+            header { padding-top: 1.5rem; padding-bottom: 4rem; }
+            h1.font-playwrite { font-size: 32px !important; }
+            .ios-clock-widget { min-width: unset !important; padding: 0.5rem 1rem !important; }
+            #current-time-large { font-size: 26px !important; }
+            .bubble-size-input { width: 38px !important; height: 38px !important; font-size: 13px !important; }
+            .accessory-item-card span { font-size: 14px !important; }
+            main { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+            /* Stack header controls */
+            .ios-bubble-card { border-radius: 20px !important; }
+        }
+
+        /* Tablet (640px - 1023px) */
+        @media (min-width: 640px) and (max-width: 1023px) {
+            h1.font-playwrite { font-size: 40px !important; }
+            .ios-clock-widget { min-width: 110px !important; }
+        }
+
+        /* Table scroll on small screens */
+        @media (max-width: 900px) {
+            .table-card-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            table { min-width: 700px !important; }
+        }
+
+        /* iPad specific (768px) */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            main { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
+            .grid.grid-cols-1.lg\\:grid-cols-3 { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+
+        /* Make accessories grid 1-col on mobile */
+        @media (max-width: 767px) {
+            .grid.grid-cols-1.lg\\:grid-cols-3 { grid-template-columns: 1fr !important; gap: 1rem !important; }
+            .max-h-\\[224px\\] { max-height: 180px !important; }
+        }
+
+        /* Submit/Reset buttons full width on mobile */
+        @media (max-width: 639px) {
+            .flex.flex-col.sm\\:flex-row.justify-end { flex-direction: column !important; }
+            .flex.flex-col.sm\\:flex-row.justify-end button { width: 100% !important; }
+        }
+
+        /* Laptop / Desktop (>= 1024px): no change, already designed for this */
+    </style>
+</head>
+<body class="pb-16 sm:pb-28">
+
+    <header class="header-bg pt-10 pb-20 relative overflow-hidden">
+        <div class="header-grain"></div>
+        <div class="header-overlay"></div>
+
+        <!-- จัดตำแหน่งให้พอดีกับกล่องด้านล่าง (px-4 md:px-6) และ max-w-[1100px] -->
+        <div class="max-w-[1100px] mx-auto px-4 md:px-6 relative z-10">
+            
+            <!-- Row 1: Stock Request + Clock (same line on mobile) -->
+            <div class="flex items-center justify-between mb-4">
+                <h1 class="text-[32px] sm:text-[46px] md:text-[56px] font-bold text-slate-800 leading-none tracking-tight" style="font-family: 'Akt', sans-serif;">
+                    Stock Request
+                </h1>
+                <div class="flex flex-col items-center justify-center ios-clock-widget px-4 py-2 text-center ml-4 flex-shrink-0">
+                    <div id="current-time-large" class="text-[28px] sm:text-[34px] font-semibold text-slate-800 leading-none tracking-tight drop-shadow-sm font-geist-time">
+                        --:--
+                    </div>
+                    <div id="current-date-small" class="text-[10px] sm:text-[11px] font-light text-slate-500 tracking-wide mt-1 font-quicksand uppercase">
+                        ---, -- ---
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Branch + Name -->
+            <div class="ios-bubble-card p-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-0 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/60 w-full sm:w-auto sm:max-w-md">
+                <div class="px-5 py-2.5 flex flex-col justify-center flex-1 sm:flex-none sm:w-44">
+                    <label id="label-branch" class="text-[14px] font-normal text-slate-500 mb-1 transition-colors">สาขาที่เบิก</label>
+                    <div class="relative flex items-center">
+                        <select id="branch-select" onchange="handleBranchChange(this)" class="w-full text-[16px] font-normal text-slate-400 bg-transparent outline-none cursor-pointer appearance-none">
+                            <option value="" disabled selected>กรุณาเลือก</option>
+                            <option>BP</option>
+                            <option>PK</option>
+                            <option>RCD</option>
+                            <option>SC</option>
+                            <option>T21</option>
+                            <option>R3</option>
+                            <option>KR</option>
+                            <option>CM</option>
+                            <option>FP</option>
+                            <option>PM</option>
+                            <option>NW</option>
+                            <option>SL</option>
+                            <option>SQ1</option>
+                            <option>CC</option>
+                            <option>KK</option>
+                        </select>
+                        <div class="absolute right-0 pointer-events-none text-[#8a632d]/60 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-5 py-2.5 flex flex-col justify-center flex-1 sm:flex-none sm:w-52">
+                    <label id="label-user" class="text-[14px] font-normal text-slate-500 mb-1 transition-colors">ผู้เบิก (ชื่อเล่น)</label>
+                    <input type="text" id="requester-name" placeholder="ระบุชื่อ..." class="w-full text-[16px] font-normal text-slate-800 placeholder-slate-400 bg-transparent outline-none border-none p-0 focus:ring-0">
+                </div>
+            </div>
+
+        </div>
+    </header>
+
+    <main class="max-w-[1100px] mx-auto px-4 md:px-6 -mt-10 relative z-30 space-y-4">
+        
+        <section class="space-y-4 pt-4">
+            <div class="relative flex items-center bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl px-4 py-3.5 shadow-[0_4px_15px_-5px_rgba(0,0,0,0.05)]">
+                <svg class="text-slate-400 mr-2" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="sku-search-input" oninput="handleSKUInput(this); filterTableRows(this.value);" placeholder="พิมพ์ค้นหารหัสสินค้าในหน้านี้..." class="w-full bg-transparent outline-none text-slate-700 font-normal placeholder-slate-400 text-sm">
+                <button onclick="clearSearchFilter()" id="clear-search-btn" class="hidden text-slate-400 hover:text-slate-600 ml-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <div class="ios-bubble-card">
+                <div class="table-card-wrapper overflow-x-auto overflow-y-visible custom-scroll">
+                    <table class="w-full text-left border-collapse min-w-[700px]" style="overflow:visible">
+                        <thead>
+                            <tr class="bg-white/40 border-b border-slate-200/50">
+                                <th class="p-4 font-playwrite text-[16px] font-medium text-slate-600 tracking-tight w-48">SKU</th>
+                                <th class="p-4 font-playwrite text-[16px] font-medium text-slate-600 tracking-tight w-40 text-center">Category</th>
+                                <th class="p-4 font-playwrite text-[16px] font-medium text-slate-600 tracking-tight">Size & Qty</th>
+                                <th class="p-4 font-playwrite text-[16px] font-medium text-slate-600 tracking-tight w-24 text-center">Total</th>
+                                <th class="p-4 w-28 text-right"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="product-table-body" class="divide-y divide-slate-100">
+                            <!-- Injected dynamically through JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ถอดกรอบด้านนอกและ Padding ออกตามคำขอ -->
+        <section class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 items-stretch">
+                
+                <div class="flex flex-col bg-white/70 rounded-[30px] border border-white/60 p-4 md:p-5 shadow-sm space-y-4 backdrop-blur-md">
+                    <div class="flex items-center gap-2 border-b border-slate-200/40 pb-3 flex-shrink-0">
+                        <h3 class="font-playwrite text-slate-600 text-[16px] font-medium leading-none">Packaging</h3>
+                    </div>
+                    <div class="flex-1 overflow-y-auto custom-scroll max-h-[224px] pr-1 space-y-2.5" id="acc-col-packaging">
+                    </div>
+                </div>
+
+                <div class="flex flex-col bg-white/70 rounded-[30px] border border-white/60 p-4 md:p-5 shadow-sm space-y-4 backdrop-blur-md">
+                    <div class="flex items-center gap-2 border-b border-slate-200/40 pb-3 flex-shrink-0">
+                        <h3 class="font-playwrite text-slate-600 text-[16px] font-medium leading-none">Document</h3>
+                    </div>
+                    <div class="flex-1 overflow-y-auto custom-scroll max-h-[224px] pr-1 space-y-2.5" id="acc-col-document">
+                    </div>
+                </div>
+
+                <div class="flex flex-col bg-white/70 rounded-[30px] border border-white/60 p-4 md:p-5 shadow-sm space-y-4 backdrop-blur-md">
+                    <div class="flex items-center gap-2 border-b border-slate-200/40 pb-3 flex-shrink-0">
+                        <h3 class="font-playwrite text-slate-600 text-[16px] font-medium leading-none">Tailoring Tools</h3>
+                    </div>
+                    <div class="flex-1 overflow-y-auto custom-scroll max-h-[224px] pr-1 space-y-2.5" id="acc-col-tailoring">
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- กล่องสำหรับกรอกข้อมูลเพิ่มเติม / อื่นๆ -->
+        <section class="space-y-4 pt-2">
+            <div class="flex flex-col bg-white/70 rounded-[30px] border border-white/60 p-4 md:p-5 shadow-sm space-y-3 backdrop-blur-md">
+                <div class="flex items-center gap-2 border-b border-slate-200/40 pb-3 flex-shrink-0">
+                    <h3 class="text-slate-600 text-[16px] leading-none flex gap-1.5 items-baseline">
+                        <span class="font-playwrite font-medium">Others</span>
+                        <span style="font-family: 'Noto Sans Thai', sans-serif;" class="font-medium text-[15px]">(อื่นๆ)</span>
+                    </h3>
+                </div>
+                <textarea id="other-remarks" rows="2" class="w-full bg-white/40 border border-slate-200/50 rounded-xl p-3 outline-none focus:bg-white focus:border-[#D9AE5D]/50 transition-colors text-slate-700 font-normal placeholder-slate-400 text-[15px] resize-none custom-scroll shadow-inner" placeholder="สิ่งที่ต้องการเบิกนอกเหนือจากรายการด้านบน (ถ้ามี)" style="font-family: 'Noto Sans Thai', sans-serif;"></textarea>
+            </div>
+        </section>
+
+        <div class="flex flex-col sm:flex-row justify-end items-center gap-4 pt-2">
+            <button onclick="openConfirmResetModal()" class="bubble-btn w-full sm:w-auto h-14 px-10 rounded-[20px] bg-white/70 border border-slate-200/50 backdrop-blur-md text-[#9e2a2b] font-medium transition-all shadow-sm flex items-center justify-center hover:bg-white hover:border-red-200 active:bg-slate-100">
+                ล้างข้อมูล
+            </button>
+            
+            <!-- ปุ่มส่งแบบฟอร์มยืนยันการเบิกสินค้าโดยตรง (ตัวอักษรบาง font-light) -->
+            <button id="submit-btn" onclick="sendDirectly()" class="bubble-btn w-full sm:w-auto h-14 px-16 rounded-[20px] bg-slate-900 text-white font-light text-lg shadow-[0_10px_25px_-5px_rgba(30,41,59,0.4)] transition-all flex items-center justify-center hover:bg-slate-800 active:scale-95">
+                ยืนยันการเบิก
+            </button>
+        </div>
+    </main>
+
+    <!-- หน้าต่างแจ้งผลส่งเบิกสำเร็จพรีเมียม สไตล์สีเขียวส่งข้อมูลสำเร็จ -->
+    <div id="success-popup-modal" class="fixed inset-0 bg-slate-900/30 backdrop-blur-md z-[120] hidden flex items-center justify-center p-6 transition-opacity duration-300">
+        <div class="bg-white/95 backdrop-blur-2xl w-full max-w-[280px] rounded-[35px] overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.15)] border border-emerald-100 scale-95 opacity-0 transition-all duration-300 transform animate-modal p-8 text-center space-y-5">
+            <div class="w-20 h-20 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center mx-auto animate-bounce">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </div>
+            <div class="space-y-1">
+                <h3 class="text-xl font-bold text-emerald-600 tracking-tight" style="font-family: 'Noto Sans Thai', sans-serif;">ส่งข้อมูลสำเร็จ</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- หน้าต่างยืนยันการล้างข้อมูลดีไซียม (Reset Confirmation Modal) -->
+    <div id="confirm-reset-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[100] hidden flex items-center justify-center p-6 transition-opacity duration-300">
+        <div class="bg-white/95 backdrop-blur-lg w-full max-sm:max-w-[340px] max-w-sm rounded-[30px] overflow-hidden shadow-2xl border border-white/40 scale-95 opacity-0 transition-all duration-300 transform animate-modal">
+            
+            <div class="bg-[#9e2a2b] px-6 py-5 text-white flex justify-between items-center relative overflow-hidden">
+                <div class="absolute -right-10 -top-10 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+                <div class="relative z-10 flex items-center gap-2">
+                    <h3 class="text-lg font-normal tracking-tight">ยืนยันการล้างข้อมูล</h3>
+                </div>
+                <button onclick="closeConfirmResetModal()" class="bubble-btn w-8 h-8 flex items-center justify-center rounded-full bg-black/10 hover:bg-black/20 transition-colors relative z-10">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <div class="p-6 text-center space-y-6">
+                <div class="space-y-2">
+                    <p class="text-slate-600 text-sm leading-relaxed font-semibold">คุณต้องการล้างรายการสินค้า รหัสสินค้า และอุปกรณ์ทั้งหมดที่กรอกไว้ใช่หรือไม่?</p>
+                    <p class="text-xs text-slate-400">*ข้อมูลที่กรอกไว้ทั้งหมดจะหายไปและไม่สามารถกู้คืนได้</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3 pt-2">
+                    <button onclick="closeConfirmResetModal()" class="bubble-btn py-3.5 bg-slate-100 hover:bg-slate-200/80 text-slate-500 rounded-xl font-normal text-sm transition-all shadow-sm">ยกเลิก</button>
+                    <button onclick="executeReset()" class="bubble-btn py-3.5 bg-[#9e2a2b] text-white hover:brightness-110 rounded-xl font-normal text-sm transition-all shadow-md shadow-red-900/10">ล้างข้อมูล</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- หน้าต่างแจ้งเตือนข้อผิดพลาดพรีเมียม (Premium Validation Warning Modal) -->
+    <div id="validation-warning-modal" onclick="closeValidationWarningModalOnBackdrop(event)" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[110] hidden flex items-center justify-center p-6 transition-opacity duration-300">
+        <div class="bg-white/95 backdrop-blur-lg w-full max-sm:max-w-[340px] max-w-sm rounded-[30px] overflow-hidden shadow-2xl border border-white/40 scale-95 opacity-0 transition-all duration-300 transform animate-modal">
+            <div class="bg-[#9e2a2b] px-6 py-5 text-white flex justify-between items-center relative overflow-hidden">
+                <div class="absolute -right-10 -top-10 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+                <div class="relative z-10 flex justify-between items-center w-full">
+                    <h3 class="text-lg font-normal tracking-tight">กรุณากรอกข้อมูลให้ครบถ้วนก่อนส่ง</h3>
+                    <button onclick="closeValidationWarningModal()" class="bubble-btn w-8 h-8 flex items-center justify-center rounded-full bg-black/10 hover:bg-black/20 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6 text-center space-y-6">
+                <div class="space-y-3 pb-4">
+                    <div class="w-12 h-12 rounded-full bg-red-50 text-[#9e2a2b] flex items-center justify-center mx-auto mb-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    </div>
+                    <p class="text-slate-600 text-base font-semibold" id="validation-warning-message">ยังไม่ได้กรอกรหัสสินค้า</p>
+                    <p class="text-xs text-slate-400" id="validation-warning-submessage">กรุณากรอกรหัสสินค้าในแถวที่มีการระบุจำนวนให้ครบถ้วนก่อนส่งเบิก</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== SKU AUTOCOMPLETE =====
+        let skuList = [];
+
+        async function loadSKUList() {
+            try {
+                const url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTMpHXkAsiiX_baXnnuT8azh_7oJFWvROOCxZxnRhNbIOFT-AqdxcjCTK6P7dcQM6sc0UxydfMxKtrK/pub?gid=497720915&single=true&output=csv';
+                const res = await fetch(url);
+                const text = await res.text();
+                skuList = text.split('\n')
+                    .map(line => line.trim().replace(/^"|"$/g, ''))
+                    .filter((v, i) => i > 0 && v.length > 0 && v !== 'SKU');
+                console.log('SKU loaded:', skuList.length, 'items');
+            } catch(e) {
+                console.warn('SKU load failed:', e);
+            }
+        }
+
+        function showSKUDropdown(inputEl, rowId) {
+            // Remove any existing dropdown
+            const existing = document.getElementById('sku-global-dropdown');
+            if (existing) existing.remove();
+
+            const query = inputEl.value.toUpperCase().trim();
+            console.log('SKU search:', query, 'list size:', skuList.length);
+            if (!query) return;
+
+            const matches = skuList.filter(s => String(s).toUpperCase().includes(query)).slice(0, 20);
+
+            const dropdown = document.createElement('div');
+            dropdown.id = 'sku-global-dropdown';
+            dropdown.className = 'sku-dropdown open';
+
+            if (matches.length === 0) {
+                dropdown.innerHTML = `<div class="sku-dropdown-empty">ไม่พบรหัสสินค้า</div>`;
+            } else {
+                dropdown.innerHTML = matches.map(s =>
+                    `<div class="sku-dropdown-item" onmousedown="selectSKU(event, '${s}', ${rowId})">${s}</div>`
+                ).join('');
+            }
+
+            document.body.appendChild(dropdown);
+
+            const rect = inputEl.getBoundingClientRect();
+            dropdown.style.position = 'fixed';
+            dropdown.style.top = (rect.bottom + 4) + 'px';
+            dropdown.style.left = rect.left + 'px';
+            dropdown.style.width = Math.max(rect.width, 280) + 'px';
+        }
+
+        function detectCategoryFromSKU(sku) {
+            const s = sku.toUpperCase().trim();
+            // Accessories prefixes
+            const accessoryPrefixes = ['SP-', 'BT-', 'CL-', 'LP-', 'NT-'];
+            if (accessoryPrefixes.some(p => s.startsWith(p))) return 'accessory';
+            // Shirt
+            if (s.includes('-SH-') || s.endsWith('-SH') || s.startsWith('SH-') || /^SH\d/.test(s)) return 'shirt';
+            // Pant
+            if (/-P-\d/.test(s) || s.endsWith('-P')) return 'pant';
+            // Vest
+            if (/-V-\d/.test(s) || s.endsWith('-V')) return 'vest';
+            // Jacket
+            if (/-J-\d/.test(s) || s.endsWith('-J')) return 'jacket';
+            return null;
+        }
+
+        function selectSKU(e, sku, rowId) {
+            e.preventDefault();
+            const p = products.find(x => x.id === rowId);
+            if (p) {
+                p.sku = sku;
+                const detectedType = detectCategoryFromSKU(sku);
+                if (detectedType && detectedType !== p.type) {
+                    p.type = detectedType;
+                    p.sizes = {};
+                    p.total = 0;
+                    const dropdown = document.getElementById('sku-global-dropdown');
+                    if (dropdown) dropdown.remove();
+                    renderTable();
+                    triggerActiveFilter();
+                    return;
+                }
+            }
+            const input = document.getElementById(`sku-input-${rowId}`);
+            if (input) input.value = sku;
+            const dropdown = document.getElementById('sku-global-dropdown');
+            if (dropdown) dropdown.remove();
+            triggerActiveFilter();
+        }
+
+        function hideSKUDropdown(inputEl) {
+            setTimeout(() => {
+                const dropdown = document.getElementById('sku-global-dropdown');
+                if (dropdown) dropdown.remove();
+            }, 150);
+        }
+        // ===== END SKU AUTOCOMPLETE =====
+
+        const sizesData = {
+            jacket: [46, 48, 50, 52, 54, 56, 58, 60],
+            transparent: [29, 30, 31, 32, 33, 34, 36, 38, 40],
+            pant: [29, 30, 31, 32, 33, 34, 36, 38, 40],
+            shirt: {
+                alpha: ['S', 'M', 'L', 'XL', 'XXL'],
+                numeric: [46, 48, 50, 52, 54, 56]
+            },
+            vest: [48, 50, 52, 54, 56, 58],
+            shoes: [39, 40, 41, 42, 43, 44, 45, 46], // เพิ่มขนาด 45 และ 46 เรียบร้อยแล้ว
+            accessory: []
+        };
+
+        // แยกข้อมูลอุปกรณ์สิ้นเปลืองออกเป็น 3 หมวดหมู่ตามสั่ง (ข้อ 1: เปลี่ยน Section 1 เป็น Packaging)
+        const accessoriesSectionPackaging = [
+            "ถุงสูท", "ไม้แขวน", "ไม้หนีบกางเกง", "ถุงผ้า", "ถุงกระดาษ", "กระดาษใบเสร็จ", "ถุงบรรจุเสื้อเชิ้ต"
+        ];
+
+        const accessoriesSectionDocument = [
+            "ใบนับสต๊อก", "ใบโอนสินค้า", "ใบงานสำเร็จรูป", "ใบงานสั่งตัด", "ใบจองสินค้า", "สมุดแก้ทรง", "สมุดตัดสูท",
+            "สมุดตัดกางเกง", "สมุดตัดเชิ้ต", "สมุดตัดกระโปรง"
+        ];
+
+        const accessoriesSectionTailoring = [
+            "ที่เลาะกระเป๋า", "เข็มหมุด", "กรรไกรตัดด้าย"
+        ];
+
+        let products = [{ id: Date.now(), sku: '', type: 'jacket', sizes: {}, total: 0 }];
+
+        // สลับสไตล์ของ Select สาขา
+        function handleBranchChange(selectEl) {
+            if (!selectEl) return;
+            if (selectEl.value === "") {
+                selectEl.classList.remove('font-extrabold', 'text-[#8a632d]');
+                selectEl.classList.add('font-normal', 'text-slate-400');
+            } else {
+                selectEl.classList.remove('font-normal', 'text-slate-400');
+                selectEl.classList.add('font-extrabold', 'text-[#8a632d]');
+            }
+        }
+
+        // ดักภาษาไทย & บังคับตัวใหญ่ช่อง SKU
+        function handleSKUInput(inputEl, id = null) {
+            if (!inputEl) return;
+            let value = inputEl.value;
+            value = value.replace(/[\u0e00-\u0e7f]/g, '');
+            value = value.toUpperCase();
+            inputEl.value = value;
+            if (id !== null) {
+                updateProduct(id, 'sku', value);
+            }
+        }
+
+        function updateProduct(id, field, value) {
+            const p = products.find(x => x.id === id);
+            if (!p) return;
+            if (field === 'type') { 
+                p.type = value; 
+                p.sizes = {}; 
+                p.total = 0;
+                renderTable(); 
+            } else if (field === 'sku') { 
+                p.sku = value; 
+                triggerActiveFilter(); 
+            }
+        }
+
+        function filterNumericInput(inputEl) {
+            inputEl.value = inputEl.value.replace(/[^0-9]/g, '');
+        }
+
+        // Force number pad on iPad regardless of keyboard language
+        function onNumericFocus(inputEl) {
+            inputEl.setAttribute('type', 'number');
+        }
+        function onNumericBlur(inputEl) {
+            inputEl.setAttribute('type', 'tel');
+            filterNumericInput(inputEl);
+        }
+
+        // Force numeric keyboard on iPad/iPhone by temporarily switching input type
+        function forceNumericKeyboard(inputEl) {
+            inputEl.setAttribute('type', 'number');
+            inputEl.setAttribute('inputmode', 'numeric');
+        }
+        function restoreTextType(inputEl) {
+            // Keep as number type while focused for numeric keyboard
+        }
+
+        function updateSize(id, size, value) {
+            const p = products.find(x => x.id === id);
+            if (!p) return;
+            const val = parseInt(value) || 0;
+            if (val > 0) {
+                p.sizes[size] = val;
+            } else {
+                delete p.sizes[size];
+            }
+            p.total = Object.values(p.sizes).reduce((a, b) => a + b, 0);
+            
+            const totalEl = document.getElementById(`total-${id}`);
+            if (totalEl) {
+                if (p.type === 'accessory') {
+                    totalEl.value = p.total || '';
+                } else {
+                    totalEl.textContent = p.total;
+                    if (p.total > 0) {
+                        totalEl.classList.remove('bg-slate-100', 'text-slate-800');
+                        totalEl.classList.add('bg-[#D9AE5D]', 'text-white', 'scale-105');
+                    } else {
+                        totalEl.classList.remove('bg-[#D9AE5D]', 'text-white', 'scale-105');
+                        totalEl.classList.add('bg-slate-100', 'text-slate-800');
+                    }
+                }
+            }
+
+            const inputEl = document.getElementById(`input-${id}-${size}`);
+            if (inputEl) {
+                if (val > 0) {
+                    inputEl.classList.add('has-value');
+                } else {
+                    inputEl.classList.remove('has-value');
+                }
+            }
+        }
+
+        // Tap to Increment
+        function handleInputClick(inputEl, id, size) {
+            if (!inputEl) return;
+            let currentVal = parseInt(inputEl.value) || 0;
+            currentVal += 1;
+            inputEl.value = currentVal;
+            updateSize(id, size, currentVal.toString());
+        }
+
+        function addRow(afterId) {
+            const index = products.findIndex(p => p.id === afterId);
+            const newRow = { id: Date.now(), sku: '', type: 'jacket', sizes: {}, total: 0 };
+            products.splice(index + 1, 0, newRow);
+            renderTable();
+            triggerActiveFilter();
+        }
+
+        function removeRow(id) {
+            if (products.length > 1) {
+                products = products.filter(p => p.id !== id);
+                renderTable();
+                triggerActiveFilter();
+            } else {
+                products[0] = { id: Date.now(), sku: '', type: 'jacket', sizes: {}, total: 0 };
+                renderTable();
+                triggerActiveFilter();
+            }
+        }
+
+        function filterTableRows(query) {
+            const cleanQuery = query.trim().toLowerCase();
+            const rows = document.querySelectorAll('#product-table-body tr');
+            const clearBtn = document.getElementById('clear-search-btn');
+
+            if (cleanQuery) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+
+            rows.forEach((row, index) => {
+                const product = products[index];
+                if (!product) return;
+                const skuMatch = product.sku.toLowerCase().includes(cleanQuery);
+                const catMatch = product.type.toLowerCase().includes(cleanQuery);
+                
+                if (!cleanQuery || skuMatch || catMatch) {
+                    row.classList.remove('hidden');
+                } else {
+                    row.classList.add('hidden');
+                }
+            });
+        }
+
+        function clearSearchFilter() {
+            const searchInput = document.getElementById('sku-search-input');
+            searchInput.value = '';
+            filterTableRows('');
+        }
+
+        function triggerActiveFilter() {
+            const searchVal = document.getElementById('sku-search-input').value;
+            filterTableRows(searchVal);
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('product-table-body');
+            tbody.innerHTML = products.map((p, idx) => {
+                let sizeControls = '';
+                if (p.type === 'accessory') {
+                    sizeControls = `<div class="text-[#D9AE5D] italic text-[14px] font-bold tracking-wide py-2.5 animate-row">ไม่ต้องระบุไซซ์สำหรับหมวดนี้</div>`;
+                } else if (p.type === 'shirt') {
+                    sizeControls = `
+                        <div class="flex flex-col gap-3 animate-row">
+                            <div class="flex flex-wrap gap-2 items-center">
+                                ${sizesData.shirt.alpha.map(s => `
+                                    <div class="flex flex-col items-center">
+                                        <span class="text-[10px] font-bold text-slate-400 mb-0.5 uppercase font-quicksand">${s}</span>
+                                        <input type="tel" inputmode="numeric" pattern="[0-9]*" onfocus="onNumericFocus(this)" onblur="onNumericBlur(this)" id="input-${p.id}-${s}" value="${p.sizes[s] || ''}" onclick="handleInputClick(this, ${p.id}, '${s}')" oninput="filterNumericInput(this); updateSize(${p.id}, '${s}', this.value)" class="bubble-size-input ${p.sizes[s] ? 'has-value' : ''}" placeholder="">
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="flex flex-wrap gap-2 items-center">
+                                ${sizesData.shirt.numeric.map(s => `
+                                    <div class="flex flex-col items-center">
+                                        <span class="text-[10px] font-bold text-slate-400 mb-0.5 uppercase font-quicksand">${s}</span>
+                                        <input type="tel" inputmode="numeric" pattern="[0-9]*" onfocus="onNumericFocus(this)" onblur="onNumericBlur(this)" id="input-${p.id}-${s}" value="${p.sizes[s] || ''}" onclick="handleInputClick(this, ${p.id}, '${s}')" oninput="filterNumericInput(this); updateSize(${p.id}, '${s}', this.value)" class="bubble-size-input ${p.sizes[s] ? 'has-value' : ''}" placeholder="">
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    sizeControls = `
+                        <div class="flex flex-wrap gap-2 items-center animate-row">
+                            ${sizesData[p.type].map(s => `
+                                <div class="flex flex-col items-center">
+                                    <span class="text-[10px] font-bold text-slate-400 mb-0.5 uppercase font-quicksand">${s}</span>
+                                    <input type="tel" inputmode="numeric" pattern="[0-9]*" onfocus="onNumericFocus(this)" onblur="onNumericBlur(this)" id="input-${p.id}-${s}" value="${p.sizes[s] || ''}" onclick="handleInputClick(this, ${p.id}, '${s}')" oninput="filterNumericInput(this); updateSize(${p.id}, '${s}', this.value)" class="bubble-size-input ${p.sizes[s] ? 'has-value' : ''}" placeholder="">
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                const isVal = p.total > 0;
+                const badgeColorClass = isVal ? 'bg-[#D9AE5D] text-white scale-105' : 'bg-slate-100 text-slate-800';
+
+                return `
+                <tr class="hover:bg-white/40 transition-colors animate-row">
+                    <td class="p-4 align-top">
+                        <div class="sku-wrapper">
+                            <input type="text" id="sku-input-${p.id}" value="${p.sku}" 
+                                   oninput="handleSKUInput(this, ${p.id}); showSKUDropdown(this, ${p.id})"
+                                   onblur="hideSKUDropdown(this)"
+                                   placeholder="รหัสสินค้า..." 
+                                   class="w-full px-4 py-3 bg-slate-100/60 border border-transparent rounded-[16px] outline-none focus:bg-white focus:border-[#D9AE5D]/30 font-normal text-slate-600 shadow-inner" 
+                                   style="font-family: 'Noto Sans Thai', sans-serif; font-size: 14px; font-weight: 400;">
+                            <div class="sku-dropdown"></div>
+                        </div>
+                    </td>
+                    
+                    <td class="p-4 align-top">
+                        <div class="relative flex items-center bg-white border border-slate-100 px-4 py-3 rounded-[16px] shadow-sm">
+                            <select onchange="updateProduct(${p.id}, 'type', this.value)" class="w-full uppercase font-light text-sm text-[#D9AE5D] bg-transparent outline-none cursor-pointer appearance-none" style="font-family: 'Roboto', sans-serif;">
+                                <option value="jacket" ${p.type==='jacket'?'selected':''}>Jacket</option>
+                                <option value="pant" ${p.type==='pant'?'selected':''}>Pant</option>
+                                <option value="shirt" ${p.type==='shirt'?'selected':''}>Shirt</option>
+                                <option value="vest" ${p.type==='vest'?'selected':''}>Vest</option>
+                                <option value="shoes" ${p.type==='shoes'?'selected':''}>Shoes</option>
+                                <option value="accessory" ${p.type==='accessory'?'selected':''}>Accessories</option>
+                            </select>
+                            <div class="absolute right-3 pointer-events-none text-[#D9AE5D]/60 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                            </div>
+                        </div>
+                    </td>
+
+                    <td class="p-4 align-top">
+                        ${sizeControls}
+                    </td>
+
+                    <td class="p-4 align-top text-center">
+                        ${p.type === 'accessory' ? `
+                            <input type="tel" inputmode="numeric" pattern="[0-9]*" onfocus="onNumericFocus(this)" onblur="onNumericBlur(this)" id="total-${p.id}" value="${p.sizes['qty'] || ''}" onclick="handleInputClick(this, ${p.id}, 'qty')" oninput="filterNumericInput(this); updateSize(${p.id}, 'qty', this.value)" placeholder="0" class="bubble-total-badge bg-white border-2 border-[#D9AE5D]/30 text-[#D9AE5D] outline-none focus:border-[#D9AE5D] focus:scale-105 text-center">
+                        ` : `
+                            <div id="total-${p.id}" class="bubble-total-badge ${badgeColorClass}">
+                                ${p.total}
+                            </div>
+                        `}
+                    </td>
+
+                    <td class="p-4 align-top">
+                        <div class="flex gap-2.5 justify-end mt-1.5">
+                            <button onclick="addRow(${p.id})" class="bubble-btn w-10 h-10 flex items-center justify-center rounded-full bg-[#D9AE5D]/10 text-[#8a632d] hover:bg-[#D9AE5D] hover:text-white transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m12 5v14M5 12h14" /></svg>
+                            </button>
+                            <button onclick="removeRow(${p.id})" class="bubble-btn w-10 h-10 flex items-center justify-center rounded-full bg-red-50 text-[#9e2a2b] hover:bg-[#9e2a2b] hover:text-white transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        function onAccessoryInput(id, value) {
+            const inputEl = document.getElementById(id);
+            const parentCard = inputEl.closest('.accessory-item-card');
+            const val = parseInt(value) || 0;
+            
+            if (inputEl) {
+                if (val > 0) {
+                    inputEl.classList.add('has-value');
+                    if (parentCard) parentCard.classList.add('active-filled');
+                } else {
+                    inputEl.classList.remove('has-value');
+                    if (parentCard) parentCard.classList.remove('active-filled');
+                }
+            }
+        }
+
+        function handleAccessoryClick(inputEl, id) {
+            if (!inputEl) return;
+            let currentVal = parseInt(inputEl.value) || 0;
+            currentVal += 1;
+            inputEl.value = currentVal;
+            onAccessoryInput(id, currentVal.toString());
+        }
+
+        function renderAccessories() {
+            const col1 = document.getElementById("acc-col-packaging");
+            col1.innerHTML = accessoriesSectionPackaging.map((item, localIdx) => {
+                const uniqueId = `acc-sec1-${localIdx}`;
+                return `
+                    <div class="accessory-item-card flex justify-between items-center py-2.5 px-4 border border-transparent rounded-2xl transition-all duration-300">
+                        <span class="text-[16px] font-medium text-slate-700 leading-tight">${item}</span>
+                        <input type="tel" inputmode="numeric" pattern="[0-9]*" onfocus="onNumericFocus(this)" onblur="onNumericBlur(this)" id="${uniqueId}" value="" onclick="handleAccessoryClick(this, '${uniqueId}')" oninput="filterNumericInput(this); onAccessoryInput('${uniqueId}', this.value)" class="bubble-size-input font-quicksand text-[#8a632d]" placeholder="">
+                    </div>
+                `;
+            }).join('');
+
+            const col2 = document.getElementById("acc-col-document");
+            col2.innerHTML = accessoriesSectionDocument.map((item, localIdx) => {
+                const uniqueId = `acc-sec2-${localIdx}`;
+                return `
+                    <div class="accessory-item-card flex justify-between items-center py-2.5 px-4 border border-transparent rounded-2xl transition-all duration-300">
+                        <span class="text-[16px] font-medium text-slate-700 leading-tight">${item}</span>
+                        <input type="tel" inputmode="numeric" pattern="[0-9]*" onfocus="onNumericFocus(this)" onblur="onNumericBlur(this)" id="${uniqueId}" value="" onclick="handleAccessoryClick(this, '${uniqueId}')" oninput="filterNumericInput(this); onAccessoryInput('${uniqueId}', this.value)" class="bubble-size-input font-quicksand text-[#8a632d]" placeholder="">
+                    </div>
+                `;
+            }).join('');
+
+            const col3 = document.getElementById("acc-col-tailoring");
+            col3.innerHTML = accessoriesSectionTailoring.map((item, localIdx) => {
+                const uniqueId = `acc-sec3-${localIdx}`;
+                return `
+                    <div class="accessory-item-card flex justify-between items-center py-2.5 px-4 border border-transparent rounded-2xl transition-all duration-300">
+                        <span class="text-[16px] font-semibold text-slate-700 leading-tight">${item}</span>
+                        <input type="tel" inputmode="numeric" pattern="[0-9]*" onfocus="onNumericFocus(this)" onblur="onNumericBlur(this)" id="${uniqueId}" value="" onclick="handleAccessoryClick(this, '${uniqueId}')" oninput="filterNumericInput(this); onAccessoryInput('${uniqueId}', this.value)" class="bubble-size-input font-quicksand text-[#8a632d]" placeholder="">
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function clearAllAppFields() {
+            const selectEl = document.getElementById('branch-select');
+            selectEl.selectedIndex = 0;
+            handleBranchChange(selectEl);
+            document.getElementById('requester-name').value = '';
+            
+            // เคลียร์ช่องอื่นๆ
+            document.getElementById('other-remarks').value = '';
+            
+            products = [{ id: Date.now(), sku: '', type: 'jacket', sizes: {}, total: 0 }];
+            renderTable();
+
+            document.getElementById('sku-search-input').value = '';
+            clearSearchFilter();
+
+            accessoriesSectionPackaging.forEach((item, idx) => {
+                const el = document.getElementById(`acc-sec1-${idx}`);
+                if (el) {
+                    el.value = '';
+                    el.classList.remove('has-value');
+                    const parentCard = el.closest('.accessory-item-card');
+                    if (parentCard) parentCard.classList.remove('active-filled');
+                }
+            });
+
+            accessoriesSectionDocument.forEach((item, idx) => {
+                const el = document.getElementById(`acc-sec2-${idx}`);
+                if (el) {
+                    el.value = '';
+                    el.classList.remove('has-value');
+                    const parentCard = el.closest('.accessory-item-card');
+                    if (parentCard) parentCard.classList.remove('active-filled');
+                }
+            });
+
+            accessoriesSectionTailoring.forEach((item, idx) => {
+                const el = document.getElementById(`acc-sec3-${idx}`);
+                if (el) {
+                    el.value = '';
+                    el.classList.remove('has-value');
+                    const parentCard = el.closest('.accessory-item-card');
+                    if (parentCard) parentCard.classList.remove('active-filled');
+                }
+            });
+        }
+
+        // หน้าต่างแจ้งผลส่งเบิกสำเร็จพรีเมียมสไตล์ iOS (แสดงข้อความ "ส่งข้อมูลสำเร็จ" สีเขียว)
+        function showSuccessPopupModal() {
+            const modal = document.getElementById('success-popup-modal');
+            modal.classList.remove('hidden');
+            
+            setTimeout(() => {
+                modal.firstElementChild.classList.remove('scale-95', 'opacity-0');
+            }, 50);
+
+            // ซ่อนป็อปอัปอัตโนมัติภายใน 3 วินาที
+            setTimeout(() => {
+                modal.firstElementChild.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }, 3000);
+        }
+
+        // ฟังก์ชันใหม่สำหรับการส่งข้อมูลโดยตรง พร้อมปรับเปลี่ยนปุ่มเป็นสีใสคล้ายกล่องเวลาขวาบน
+        async function sendDirectly() {
+            const btn = document.getElementById('submit-btn');
+            const originalHTML = btn.innerHTML;
+            
+            // คลาสความสวยงามปุ่มสีเข้มเดิม
+            const originalClasses = "bg-slate-900 text-white shadow-[0_10px_25px_-5px_rgba(30,41,59,0.4)] hover:bg-slate-800";
+            
+            // คลาสกระจกใส/สีใส คล้าย .ios-clock-widget ข้างบนขวา (rgba(255,255,255,0.3) + border + backdrop-filter)
+            const glassyClasses = "bg-white/30 backdrop-blur-md border border-white/40 text-slate-800 shadow-sm shadow-black/5";
+
+            const branch = document.getElementById('branch-select').value;
+            const requester = document.getElementById('requester-name').value.trim();
+            const otherRemarks = document.getElementById('other-remarks').value.trim();
+
+            if (!branch || branch === "") {
+                openValidationWarningModal("กรุณาเลือกสาขาที่เบิก", "กรุณาเลือกสาขาที่ทำรายการเบิกจากเมนูดรอปดาวน์ก่อนทำการบันทึกข้อมูล");
+                return;
+            }
+
+            if (requester === "") {
+                openValidationWarningModal("กรุณากรอกชื่อผู้เบิก", "กรุณากรอกชื่อเล่นของผู้เบิกในช่องผู้เบิก (ชื่อเล่น) ก่อนทำการบันทึกข้อมูล");
+                return;
+            }
+
+            let hasEmptySKU = false;
+            products.forEach(p => {
+                if (p.total > 0 && p.sku.trim() === '') {
+                    hasEmptySKU = true;
+                }
+            });
+
+            if (hasEmptySKU) {
+                openValidationWarningModal("กรุณากรอกรหัสสินค้า", "คุณป้อนจำนวนในตารางสินค้าไว้แต่ไม่ได้กรอกรหัสสินค้า (SKU) กรุณากรอกรหัสสินค้าในแถวที่มีจำนวนให้ครบถ้วน");
+                return;
+            }
+
+            // 1. เปลี่ยนสไตล์ปุ่มหลักเป็น "สีใสโปร่งแสง" ทันทีที่มีการกดยืนยันการส่งข้อมูล
+            btn.disabled = true;
+            btn.classList.remove(...originalClasses.split(' '));
+            btn.classList.add(...glassyClasses.split(' '));
+            btn.innerHTML = `
+                <svg class="animate-spin h-5 w-5 text-slate-600 inline-block mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg> กำลังส่งข้อมูล...`;
+
+            const now = new Date();
+            const day = now.getDate().toString().padStart(2, '0');
+            const month = (now.getMonth() + 1).toString().padStart(2, '0');
+            const yearStr = (now.getFullYear() + 543).toString().slice(-2); // ปี 2 หลัก
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const reportFormattedDateTime = `${day}/${month}/${yearStr} ${hours}:${minutes}`;
+            const formattedDate = `${day}/${month}/${now.getFullYear() + 543} ${hours}:${minutes}`;
+
+            // แผนที่รหัสหมวดหมู่สินค้า (แปลงเฉพาะ JACKET, PANT, VEST)
+            const categoryCodes = {
+                'jacket': 'J',
+                'pant': 'P',
+                'vest': 'V'
+            };
+
+            let packagingDetails = "";
+            let documentDetails = "";
+            let tailoringDetails = "";
+            
+            accessoriesSectionPackaging.forEach((item, idx) => {
+                const el = document.getElementById(`acc-sec1-${idx}`);
+                const qty = el ? parseInt(el.value) || 0 : 0;
+                if (qty > 0) packagingDetails += `- ${item}: ${qty} ชิ้น\n`;
+            });
+
+            accessoriesSectionDocument.forEach((item, idx) => {
+                const el = document.getElementById(`acc-sec2-${idx}`);
+                const qty = el ? parseInt(el.value) || 0 : 0;
+                if (qty > 0) documentDetails += `- ${item}: ${qty} ชิ้น\n`;
+            });
+
+            accessoriesSectionTailoring.forEach((item, idx) => {
+                const el = document.getElementById(`acc-sec3-${idx}`);
+                const qty = el ? parseInt(el.value) || 0 : 0;
+                if (qty > 0) tailoringDetails += `- ${item}: ${qty} ชิ้น\n`;
+            });
+
+            // แปลงข้อมูลสินค้าเบิกในช่องตารางหลักให้อยู่ในรูปแบบ: SKU-category-size = จำนวน
+            // โดยจะแปลงและส่งออกเฉพาะ JACKET, PANT, VEST เท่านั้น (SHIRT, SHOES, ACCESSORY จะไม่ถูกแสดงในตัวส่งข้อมูลเลย)
+            let detailText = "";
+            let productListForRawSummary = "";
+            let hasMainProducts = false;
+
+            products.forEach(p => {
+                const typeLower = p.type.toLowerCase();
+                if (p.sku.trim() !== '' && p.total > 0) {
+                    hasMainProducts = true;
+                    const catCode = categoryCodes[typeLower] || typeLower.toUpperCase();
+                    
+                    Object.entries(p.sizes).forEach(([size, qty]) => {
+                        const val = parseInt(qty) || 0;
+                        if (val > 0) {
+                            const rowOutput = `${p.sku}-${catCode}-${size} = ${val}\n`;
+                            detailText += rowOutput;
+                            productListForRawSummary += rowOutput;
+                        }
+                    });
+                }
+            });
+
+            if (hasMainProducts) {
+                detailText = "[รายการสินค้าเบิก]\n" + detailText;
+            }
+            
+            // บิลด์ข้อมูลสรุปดิบแบบเรียลไทม์
+            let rawTextSummary = `📅 วันที่: ${reportFormattedDateTime}\n`;
+            rawTextSummary += `🏢 สาขาที่เบิก: ${branch}\n`;
+            rawTextSummary += `👤 ผู้เบิก: ${requester}\n`;
+            rawTextSummary += `---------------------------------\n\n`;
+
+            if (hasMainProducts) {
+                rawTextSummary += `📦 [รายการสินค้า]\n${productListForRawSummary}\n`;
+            }
+
+            let accText = `🛠 อุปกรณ์อื่นๆ\n`;
+            let hasAccText = false;
+            
+            let pLocal = "";
+            accessoriesSectionPackaging.forEach((item, localIdx) => {
+                const el = document.getElementById(`acc-sec1-${localIdx}`);
+                if (el) {
+                    const val = parseInt(el.value) || 0;
+                    if (val > 0) { hasAccText = true; pLocal += `- ${item}: ${val} ชิ้น\n`; }
+                }
+            });
+            if (pLocal) accText += `[Packaging]\n${pLocal}\n`;
+
+            let dLocal = "";
+            accessoriesSectionDocument.forEach((item, localIdx) => {
+                const elIdx = document.getElementById(`acc-sec2-${localIdx}`);
+                if (elIdx) {
+                    const val = parseInt(elIdx.value) || 0;
+                    if (val > 0) { hasAccText = true; dLocal += `- ${item}: ${val} ชิ้น\n`; }
+                }
+            });
+            if (dLocal) accText += `[Document]\n${dLocal}\n`;
+
+            let tLocal = "";
+            accessoriesSectionTailoring.forEach((item, localIdx) => {
+                const elIdx = document.getElementById(`acc-sec3-${localIdx}`);
+                if (elIdx) {
+                    const val = parseInt(elIdx.value) || 0;
+                    if (val > 0) { hasAccText = true; tLocal += `- ${item}: ${val} ชิ้น\n`; }
+                }
+            });
+            if (tLocal) accText += `[Tailoring Tools]\n${tLocal}\n`;
+
+            if (hasAccText) {
+                rawTextSummary += accText + `\n`;
+            }
+
+            // เพิ่มส่วนอื่นๆ เข้าไปใน raw summary
+            if (otherRemarks) {
+                rawTextSummary += `[หมายเหตุ / อื่นๆ]\n${otherRemarks}\n\n`;
+            }
+
+            const payload = {
+                datetime: formattedDate,
+                branch: branch,
+                requester: requester,
+                detail: detailText.trim() || "ไม่มีรายการสินค้าเบิกหลัก",
+                packaging: packagingDetails.trim() || "ไม่มีรายการเบิก",
+                document: documentDetails.trim() || "ไม่มีรายการเบิก",
+                tailoring: tailoringDetails.trim() || "ไม่มีรายการเบิก",
+                others: otherRemarks || "ไม่มี", // ส่งค่าแยกไปให้ด้วย เผื่อในอนาคตต้องการเก็บค่านี้
+                raw_summary: rawTextSummary
+            };
+
+            const webhookUrl = "https://psgcxu7br5sp.sg.larksuite.com/base/automation/webhook/event/Z3fSagIIbwsJPXhH0Ddl4OYagte";
+
+            try {
+                const response = await fetch(webhookUrl, {
+                    method: "POST",
+                    mode: "no-cors",
+                    body: JSON.stringify(payload)
+                });
+
+                // แสดงแอนิเมชันป๊อปอัปสำเร็จ "ส่งข้อมูลสำเร็จ" สีเขียวตามต้องการ
+                showSuccessPopupModal();
+
+                // ล้างรายการฟอร์มข้อมูลทั้งหมดทันที เพื่อความพร้อมในการรับเบิกชุดต่อไป
+                clearAllAppFields();
+
+                // เปลี่ยนคำบนปุ่มแสดงสถานะสำเร็จ
+                btn.innerHTML = `ส่งข้อมูลสำเร็จ`;
+
+                // ทิ้งสถานะปุ่มแบบกระจกใสสวยงามค้างไว้ 3 วินาทีตามแอนิเมชันแจ้งเตือน แล้วจึงเปลี่ยนกลับเป็นสีเข้มปกติ
+                setTimeout(() => {
+                    btn.classList.remove(...glassyClasses.split(' '));
+                    btn.classList.add(...originalClasses.split(' '));
+                    btn.innerHTML = originalHTML;
+                    btn.disabled = false;
+                }, 3000);
+
+            } catch (error) {
+                console.error("Error sending data to Lark Webhook:", error);
+                btn.innerHTML = `ส่งล้มเหลว กรุณาลองใหม่`;
+                btn.classList.remove(...glassyClasses.split(' '));
+                btn.classList.add('bg-red-600', 'text-white');
+                
+                setTimeout(() => {
+                    btn.classList.remove('bg-red-600', 'text-white');
+                    btn.classList.add(...originalClasses.split(' '));
+                    btn.innerHTML = originalHTML;
+                    btn.disabled = false;
+                }, 3000);
+            }
+        }
+
+        function openConfirmResetModal() {
+            const modal = document.getElementById('confirm-reset-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.firstElementChild.classList.remove('scale-95', 'opacity-0');
+            }, 10);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeConfirmResetModal() {
+            const modal = document.getElementById('confirm-reset-modal');
+            modal.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+            document.body.style.overflow = 'auto';
+        }
+
+        function openValidationWarningModal(message, submessage = "กรุณากรอกรหัสสินค้าในแถวที่มีการระบุจำนวนให้ครบถ้วนก่อนส่งเบิก") {
+            const modal = document.getElementById('validation-warning-modal');
+            document.getElementById('validation-warning-message').textContent = message;
+            document.getElementById('validation-warning-submessage').textContent = submessage;
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.firstElementChild.classList.remove('scale-95', 'opacity-0');
+            }, 10);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeValidationWarningModal() {
+            const modal = document.getElementById('validation-warning-modal');
+            modal.firstElementChild.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+            document.body.style.overflow = 'auto';
+        }
+
+        function closeValidationWarningModalOnBackdrop(e) {
+            const modalContent = document.querySelector('#validation-warning-modal > div');
+            if (modalContent && !modalContent.contains(e.target)) {
+                closeValidationWarningModal();
+            }
+        }
+
+        function executeReset() {
+            window.location.reload();
+        }
+
+        function updateDateTime() {
+            const Bird = new Date();
+            const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            
+            const dayName = days[Bird.getDay()];
+            const dateVal = Bird.getDate();
+            const monthName = months[Bird.getMonth()];
+            
+            const hours = Bird.getHours().toString().padStart(2, '0');
+            const minutes = Bird.getMinutes().toString().padStart(2, '0');
+
+            document.getElementById('current-time-large').textContent = `${hours}:${minutes}`;
+            document.getElementById('current-date-small').textContent = `${dayName}, ${dateVal} ${monthName}`;
+        }
+
+        window.onload = () => {
+            loadSKUList();
+            updateDateTime();
+            setInterval(updateDateTime, 10000); // sync clock every 10s
+            renderTable();
+            renderAccessories();
+            handleBranchChange(document.getElementById('branch-select'));
+        };
+    </script>
+</body>
+</html>
