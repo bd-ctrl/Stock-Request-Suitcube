@@ -1,0 +1,7 @@
+name = "sku-proxy"
+main = "src/index.js"
+compatibility_date = "2026-10-23"
+
+# DATA_API_KEY (key ของ Cubic Data Lake API) เป็นความลับ ห้ามใส่ไว้ในไฟล์นี้
+# ตั้งค่าด้วยคำสั่ง: wrangler secret put DATA_API_KEY
+# (ไม่บังคับ) REFRESH_KEY สำหรับสั่งล้างแคชเอง: wrangler secret put REFRESH_KEY

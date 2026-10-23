@@ -545,17 +545,44 @@
 
     <script>
         // ===== SKU AUTOCOMPLETE =====
+        const APP_VERSION = '2026-10-23-1';
         let skuList = [];
+
+        // แหล่งหลัก: Worker sku-proxy (ดึงแคตตาล็อกสินค้าจาก Cubic Data Lake API · key อยู่ฝั่ง Worker ไม่อยู่ในหน้านี้)
+        // ใส่ URL ที่ได้หลัง deploy เช่น 'https://sku-proxy.<subdomain>.workers.dev/sku-list'
+        const SKU_LIST_URL = '';
+        // แหล่งสำรอง: Google Sheet CSV เดิม (ใช้เมื่อ SKU_LIST_URL ว่างหรือเรียกไม่สำเร็จ)
+        const SKU_FALLBACK_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTMpHXkAsiiX_baXnnuT8azh_7oJFWvROOCxZxnRhNbIOFT-AqdxcjCTK6P7dcQM6sc0UxydfMxKtrK/pub?gid=497720915&single=true&output=csv';
+
+        async function loadSKUFromProxy() {
+            if (!SKU_LIST_URL) throw new Error('SKU_LIST_URL not set');
+            const res = await fetch(SKU_LIST_URL, { cache: 'no-store' });
+            if (!res.ok) throw new Error('proxy HTTP ' + res.status);
+            const j = await res.json();
+            const list = Array.isArray(j.skus) ? j.skus : [];
+            if (list.length === 0) throw new Error('proxy returned empty list');
+            return list.map(s => String(s).trim()).filter(Boolean);
+        }
+
+        async function loadSKUFromCSV() {
+            const res = await fetch(SKU_FALLBACK_CSV_URL);
+            const text = await res.text();
+            return text.split('\n')
+                .map(line => line.trim().replace(/^"|"$/g, ''))
+                .filter((v, i) => i > 0 && v.length > 0 && v !== 'SKU');
+        }
 
         async function loadSKUList() {
             try {
-                const url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTMpHXkAsiiX_baXnnuT8azh_7oJFWvROOCxZxnRhNbIOFT-AqdxcjCTK6P7dcQM6sc0UxydfMxKtrK/pub?gid=497720915&single=true&output=csv';
-                const res = await fetch(url);
-                const text = await res.text();
-                skuList = text.split('\n')
-                    .map(line => line.trim().replace(/^"|"$/g, ''))
-                    .filter((v, i) => i > 0 && v.length > 0 && v !== 'SKU');
-                console.log('SKU loaded:', skuList.length, 'items');
+                skuList = await loadSKUFromProxy();
+                console.log('SKU loaded from proxy:', skuList.length, 'items');
+                return;
+            } catch(e) {
+                console.warn('SKU proxy failed, falling back to CSV:', e.message || e);
+            }
+            try {
+                skuList = await loadSKUFromCSV();
+                console.log('SKU loaded from CSV:', skuList.length, 'items');
             } catch(e) {
                 console.warn('SKU load failed:', e);
             }

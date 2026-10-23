@@ -1,0 +1,5 @@
+# key ของ Cubic Data Lake API เก็บในไฟล์นี้ได้เฉพาะในเครื่อง ห้ามขึ้น git
+data-api-key.txt
+sku-proxy/.wrangler/
+sku-proxy/node_modules/
+.claude/
