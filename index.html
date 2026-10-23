@@ -545,12 +545,12 @@
 
     <script>
         // ===== SKU AUTOCOMPLETE =====
-        const APP_VERSION = '2026-10-23-1';
+        const APP_VERSION = '2026-10-23-2';
         let skuList = [];
 
         // แหล่งหลัก: Worker sku-proxy (ดึงแคตตาล็อกสินค้าจาก Cubic Data Lake API · key อยู่ฝั่ง Worker ไม่อยู่ในหน้านี้)
         // ใส่ URL ที่ได้หลัง deploy เช่น 'https://sku-proxy.<subdomain>.workers.dev/sku-list'
-        const SKU_LIST_URL = '';
+        const SKU_LIST_URL = 'https://sku-proxy.ba-bd5.workers.dev/sku-list';
         // แหล่งสำรอง: Google Sheet CSV เดิม (ใช้เมื่อ SKU_LIST_URL ว่างหรือเรียกไม่สำเร็จ)
         const SKU_FALLBACK_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTMpHXkAsiiX_baXnnuT8azh_7oJFWvROOCxZxnRhNbIOFT-AqdxcjCTK6P7dcQM6sc0UxydfMxKtrK/pub?gid=497720915&single=true&output=csv';
 
