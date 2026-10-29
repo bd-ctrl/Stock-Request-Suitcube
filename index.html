@@ -240,14 +240,23 @@
             white-space: nowrap;
             line-height: 1.1;
         }
+        /* หัว "หน่วย" ให้ขอบขวาตรงกับหน่วยในแถว: แถวอยู่ในกล่องเลื่อน (pr-1 = 4px) + การ์ดแถว (px-4 = 16px) */
         .acc-unit-head {
             font-family: 'Noto Sans Thai', sans-serif;
             font-size: 13px;
             font-weight: 500;
             color: #94a3b8;
+            min-width: 58px;
+            text-align: right;
+            margin-right: 20px;
+        }
+        @media (pointer: fine) {
+            .acc-unit-head { margin-right: 26px; } /* คอม: เผื่อแถบเลื่อน 6px ของกล่องเลื่อน */
+            [id^="acc-col-"].custom-scroll { scrollbar-gutter: stable; } /* ทุกกล่องจองที่แถบเลื่อนเท่ากัน แม้รายการน้อยไม่ต้องเลื่อน */
         }
         @media (max-width: 639px) {
             .acc-unit { font-size: 12px; min-width: 52px; }
+            .acc-unit-head { font-size: 12px; min-width: 52px; }
         }
 
         /* SKU Autocomplete Dropdown */
@@ -570,7 +579,7 @@
 
     <script>
         // ===== SKU AUTOCOMPLETE =====
-        const APP_VERSION = '2026-10-28-1';
+        const APP_VERSION = '2026-10-29-1';
         let skuList = [];
 
         // แหล่งหลัก: Worker sku-proxy (ดึงแคตตาล็อกสินค้าจาก Cubic Data Lake API · key อยู่ฝั่ง Worker ไม่อยู่ในหน้านี้)
