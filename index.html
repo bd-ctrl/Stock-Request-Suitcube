@@ -229,6 +229,27 @@
             box-shadow: 0 6px 18px rgba(217, 174, 93, 0.06);
         }
 
+        /* หน่วยนับท้ายช่องจำนวนของอุปกรณ์ */
+        .acc-unit {
+            font-family: 'Noto Sans Thai', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            color: #64748b;
+            min-width: 58px;
+            text-align: right;
+            white-space: nowrap;
+            line-height: 1.1;
+        }
+        .acc-unit-head {
+            font-family: 'Noto Sans Thai', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            color: #94a3b8;
+        }
+        @media (max-width: 639px) {
+            .acc-unit { font-size: 12px; min-width: 52px; }
+        }
+
         /* SKU Autocomplete Dropdown */
         .sku-wrapper {
             position: relative;
@@ -417,32 +438,36 @@
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 items-stretch">
                 
                 <div class="flex flex-col bg-white/70 rounded-[30px] border border-white/60 p-4 md:p-5 shadow-sm space-y-4 backdrop-blur-md">
-                    <div class="flex items-center gap-2 border-b border-slate-200/40 pb-3 flex-shrink-0">
+                    <div class="flex items-center justify-between gap-2 border-b border-slate-200/40 pb-3 flex-shrink-0">
                         <h3 class="font-playwrite text-slate-600 text-[16px] font-medium leading-none">Packaging</h3>
+                        <span class="acc-unit-head">หน่วย</span>
                     </div>
                     <div class="flex-1 overflow-y-auto custom-scroll max-h-[224px] pr-1 space-y-2.5" id="acc-col-packaging">
                     </div>
                 </div>
 
                 <div class="flex flex-col bg-white/70 rounded-[30px] border border-white/60 p-4 md:p-5 shadow-sm space-y-4 backdrop-blur-md">
-                    <div class="flex items-center gap-2 border-b border-slate-200/40 pb-3 flex-shrink-0">
+                    <div class="flex items-center justify-between gap-2 border-b border-slate-200/40 pb-3 flex-shrink-0">
                         <h3 class="font-playwrite text-slate-600 text-[16px] font-medium leading-none">Document</h3>
+                        <span class="acc-unit-head">หน่วย</span>
                     </div>
                     <div class="flex-1 overflow-y-auto custom-scroll max-h-[224px] pr-1 space-y-2.5" id="acc-col-document">
                     </div>
                 </div>
 
                 <div class="flex flex-col bg-white/70 rounded-[30px] border border-white/60 p-4 md:p-5 shadow-sm space-y-4 backdrop-blur-md">
-                    <div class="flex items-center gap-2 border-b border-slate-200/40 pb-3 flex-shrink-0">
+                    <div class="flex items-center justify-between gap-2 border-b border-slate-200/40 pb-3 flex-shrink-0">
                         <h3 class="font-playwrite text-slate-600 text-[16px] font-medium leading-none">Tailoring Tools</h3>
+                        <span class="acc-unit-head">หน่วย</span>
                     </div>
                     <div class="flex-1 overflow-y-auto custom-scroll max-h-[224px] pr-1 space-y-2.5" id="acc-col-tailoring">
                     </div>
                 </div>
 
                 <div class="flex flex-col bg-white/70 rounded-[30px] border border-white/60 p-4 md:p-5 shadow-sm space-y-4 backdrop-blur-md">
-                    <div class="flex items-center gap-2 border-b border-slate-200/40 pb-3 flex-shrink-0">
+                    <div class="flex items-center justify-between gap-2 border-b border-slate-200/40 pb-3 flex-shrink-0">
                         <h3 class="text-slate-600 text-[16px] font-medium leading-none" style="font-family: 'Noto Sans Thai', sans-serif;">กระดาษใบเสร็จ</h3>
+                        <span class="acc-unit-head">หน่วย</span>
                     </div>
                     <div class="flex-1 overflow-y-auto custom-scroll max-h-[224px] pr-1 space-y-2.5" id="acc-col-receipt">
                     </div>
@@ -545,7 +570,7 @@
 
     <script>
         // ===== SKU AUTOCOMPLETE =====
-        const APP_VERSION = '2026-10-23-2';
+        const APP_VERSION = '2026-10-28-1';
         let skuList = [];
 
         // แหล่งหลัก: Worker sku-proxy (ดึงแคตตาล็อกสินค้าจาก Cubic Data Lake API · key อยู่ฝั่ง Worker ไม่อยู่ในหน้านี้)
@@ -700,7 +725,7 @@
         ];
 
         const accessoriesSectionTailoring = [
-            "ที่เลาะกระเป๋า", "เข็มหมุด", "กรรไกรตัดด้าย"
+            "ที่เลาะกระเป๋า", "เข็มหมุด", "กรรไกรตัดด้าย", "สายวัด"
         ];
 
         const accessoriesSectionReceipt = [
@@ -708,6 +733,20 @@
         ];
 
         const accessoriesSectionOthers = [];
+
+        // หน่วยนับของแต่ละหมวด (ใช้ทั้งบนหน้าจอและในข้อความที่ส่งเข้า Lark)
+        const accessoryUnits = {
+            packaging: 'ชิ้น',
+            document: 'แผ่น/เล่ม',
+            receipt: 'ม้วน',
+            others: 'ชิ้น',
+            tailoring: { 'ที่เลาะกระเป๋า': 'อัน', 'เข็มหมุด': 'กล่อง', 'กรรไกรตัดด้าย': 'อัน', 'สายวัด': 'เส้น' }
+        };
+        function unitOf(section, item) {
+            const u = accessoryUnits[section];
+            if (typeof u === 'string') return u;
+            return (u && u[item]) || 'ชิ้น';
+        }
 
         let products = [{ id: Date.now(), sku: '', type: 'jacket', sizes: {}, total: 0 }];
 
@@ -1006,7 +1045,10 @@
                 return `
                     <div class="accessory-item-card flex justify-between items-center py-2.5 px-4 border border-transparent rounded-2xl transition-all duration-300">
                         <span class="text-[16px] font-medium text-slate-700 leading-tight">${item}</span>
-                        <input type="tel" inputmode="numeric" pattern="[0-9]*" onfocus="onNumericFocus(this)" onblur="onNumericBlur(this)" id="${uniqueId}" value="" onclick="handleAccessoryClick(this, '${uniqueId}')" oninput="filterNumericInput(this); onAccessoryInput('${uniqueId}', this.value)" class="bubble-size-input font-quicksand text-[#8a632d]" placeholder="">
+                        <div class="flex items-center gap-2.5">
+                            <input type="tel" inputmode="numeric" pattern="[0-9]*" onfocus="onNumericFocus(this)" onblur="onNumericBlur(this)" id="${uniqueId}" value="" onclick="handleAccessoryClick(this, '${uniqueId}')" oninput="filterNumericInput(this); onAccessoryInput('${uniqueId}', this.value)" class="bubble-size-input font-quicksand text-[#8a632d]" placeholder="">
+                            <span class="acc-unit">${unitOf('packaging', item)}</span>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -1017,7 +1059,10 @@
                 return `
                     <div class="accessory-item-card flex justify-between items-center py-2.5 px-4 border border-transparent rounded-2xl transition-all duration-300">
                         <span class="text-[16px] font-medium text-slate-700 leading-tight">${item}</span>
-                        <input type="tel" inputmode="numeric" pattern="[0-9]*" onfocus="onNumericFocus(this)" onblur="onNumericBlur(this)" id="${uniqueId}" value="" onclick="handleAccessoryClick(this, '${uniqueId}')" oninput="filterNumericInput(this); onAccessoryInput('${uniqueId}', this.value)" class="bubble-size-input font-quicksand text-[#8a632d]" placeholder="">
+                        <div class="flex items-center gap-2.5">
+                            <input type="tel" inputmode="numeric" pattern="[0-9]*" onfocus="onNumericFocus(this)" onblur="onNumericBlur(this)" id="${uniqueId}" value="" onclick="handleAccessoryClick(this, '${uniqueId}')" oninput="filterNumericInput(this); onAccessoryInput('${uniqueId}', this.value)" class="bubble-size-input font-quicksand text-[#8a632d]" placeholder="">
+                            <span class="acc-unit">${unitOf('document', item)}</span>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -1028,7 +1073,10 @@
                 return `
                     <div class="accessory-item-card flex justify-between items-center py-2.5 px-4 border border-transparent rounded-2xl transition-all duration-300">
                         <span class="text-[16px] font-semibold text-slate-700 leading-tight">${item}</span>
-                        <input type="tel" inputmode="numeric" pattern="[0-9]*" onfocus="onNumericFocus(this)" onblur="onNumericBlur(this)" id="${uniqueId}" value="" onclick="handleAccessoryClick(this, '${uniqueId}')" oninput="filterNumericInput(this); onAccessoryInput('${uniqueId}', this.value)" class="bubble-size-input font-quicksand text-[#8a632d]" placeholder="">
+                        <div class="flex items-center gap-2.5">
+                            <input type="tel" inputmode="numeric" pattern="[0-9]*" onfocus="onNumericFocus(this)" onblur="onNumericBlur(this)" id="${uniqueId}" value="" onclick="handleAccessoryClick(this, '${uniqueId}')" oninput="filterNumericInput(this); onAccessoryInput('${uniqueId}', this.value)" class="bubble-size-input font-quicksand text-[#8a632d]" placeholder="">
+                            <span class="acc-unit">${unitOf('tailoring', item)}</span>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -1039,7 +1087,10 @@
                 return `
                     <div class="accessory-item-card flex justify-between items-center py-2.5 px-4 border border-transparent rounded-2xl transition-all duration-300">
                         <span class="text-[16px] font-medium text-slate-700 leading-tight">${item}</span>
-                        <input type="tel" inputmode="numeric" pattern="[0-9]*" onfocus="onNumericFocus(this)" onblur="onNumericBlur(this)" id="${uniqueId}" value="" onclick="handleAccessoryClick(this, '${uniqueId}')" oninput="filterNumericInput(this); onAccessoryInput('${uniqueId}', this.value)" class="bubble-size-input font-quicksand text-[#8a632d]" placeholder="">
+                        <div class="flex items-center gap-2.5">
+                            <input type="tel" inputmode="numeric" pattern="[0-9]*" onfocus="onNumericFocus(this)" onblur="onNumericBlur(this)" id="${uniqueId}" value="" onclick="handleAccessoryClick(this, '${uniqueId}')" oninput="filterNumericInput(this); onAccessoryInput('${uniqueId}', this.value)" class="bubble-size-input font-quicksand text-[#8a632d]" placeholder="">
+                            <span class="acc-unit">${unitOf('receipt', item)}</span>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -1051,7 +1102,10 @@
                 return `
                     <div class="accessory-item-card flex justify-between items-center py-2.5 px-4 border border-transparent rounded-2xl transition-all duration-300">
                         <span class="text-[16px] font-medium text-slate-700 leading-tight">${item}</span>
-                        <input type="tel" inputmode="numeric" pattern="[0-9]*" onfocus="onNumericFocus(this)" onblur="onNumericBlur(this)" id="${uniqueId}" value="" onclick="handleAccessoryClick(this, '${uniqueId}')" oninput="filterNumericInput(this); onAccessoryInput('${uniqueId}', this.value)" class="bubble-size-input font-quicksand text-[#8a632d]" placeholder="">
+                        <div class="flex items-center gap-2.5">
+                            <input type="tel" inputmode="numeric" pattern="[0-9]*" onfocus="onNumericFocus(this)" onblur="onNumericBlur(this)" id="${uniqueId}" value="" onclick="handleAccessoryClick(this, '${uniqueId}')" oninput="filterNumericInput(this); onAccessoryInput('${uniqueId}', this.value)" class="bubble-size-input font-quicksand text-[#8a632d]" placeholder="">
+                            <span class="acc-unit">${unitOf('others', item)}</span>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -1211,26 +1265,26 @@
             accessoriesSectionPackaging.forEach((item, idx) => {
                 const el = document.getElementById(`acc-sec1-${idx}`);
                 const qty = el ? parseInt(el.value) || 0 : 0;
-                if (qty > 0) packagingDetails += `- ${item}: ${qty} ชิ้น\n`;
+                if (qty > 0) packagingDetails += `- ${item}: ${qty} ${unitOf('packaging', item)}\n`;
             });
 
             accessoriesSectionDocument.forEach((item, idx) => {
                 const el = document.getElementById(`acc-sec2-${idx}`);
                 const qty = el ? parseInt(el.value) || 0 : 0;
-                if (qty > 0) documentDetails += `- ${item}: ${qty} ชิ้น\n`;
+                if (qty > 0) documentDetails += `- ${item}: ${qty} ${unitOf('document', item)}\n`;
             });
 
             accessoriesSectionTailoring.forEach((item, idx) => {
                 const el = document.getElementById(`acc-sec3-${idx}`);
                 const qty = el ? parseInt(el.value) || 0 : 0;
-                if (qty > 0) tailoringDetails += `- ${item}: ${qty} ชิ้น\n`;
+                if (qty > 0) tailoringDetails += `- ${item}: ${qty} ${unitOf('tailoring', item)}\n`;
             });
 
             let receiptDetails = "";
             accessoriesSectionReceipt.forEach((item, idx) => {
                 const el = document.getElementById(`acc-sec5-${idx}`);
                 const qty = el ? parseInt(el.value) || 0 : 0;
-                if (qty > 0) receiptDetails += `- ${item}: ${qty} ชิ้น\n`;
+                if (qty > 0) receiptDetails += `- ${item}: ${qty} ${unitOf('receipt', item)}\n`;
             });
             // รวมกระดาษใบเสร็จเข้าช่อง packaging (ไม่ต้องแก้ field ใน Lark)
             const packagingCombined = [packagingDetails.trim(), receiptDetails ? `[กระดาษใบเสร็จ]\n${receiptDetails.trim()}` : ""].filter(Boolean).join("\n");
@@ -1239,7 +1293,7 @@
             accessoriesSectionOthers.forEach((item, idx) => {
                 const el = document.getElementById(`acc-sec4-${idx}`);
                 const qty = el ? parseInt(el.value) || 0 : 0;
-                if (qty > 0) othersDetails += `- ${item}: ${qty} ชิ้น\n`;
+                if (qty > 0) othersDetails += `- ${item}: ${qty} ${unitOf('others', item)}\n`;
             });
             const othersCombined = [othersDetails.trim(), otherRemarks ? `หมายเหตุ: ${otherRemarks}` : ""].filter(Boolean).join("\n");
 
@@ -1288,7 +1342,7 @@
                 const el = document.getElementById(`acc-sec1-${localIdx}`);
                 if (el) {
                     const val = parseInt(el.value) || 0;
-                    if (val > 0) { hasAccText = true; pLocal += `- ${item}: ${val} ชิ้น\n`; }
+                    if (val > 0) { hasAccText = true; pLocal += `- ${item}: ${val} ${unitOf('packaging', item)}\n`; }
                 }
             });
             if (pLocal) accText += `[Packaging]\n${pLocal}\n`;
@@ -1298,7 +1352,7 @@
                 const elIdx = document.getElementById(`acc-sec2-${localIdx}`);
                 if (elIdx) {
                     const val = parseInt(elIdx.value) || 0;
-                    if (val > 0) { hasAccText = true; dLocal += `- ${item}: ${val} ชิ้น\n`; }
+                    if (val > 0) { hasAccText = true; dLocal += `- ${item}: ${val} ${unitOf('document', item)}\n`; }
                 }
             });
             if (dLocal) accText += `[Document]\n${dLocal}\n`;
@@ -1308,7 +1362,7 @@
                 const elIdx = document.getElementById(`acc-sec3-${localIdx}`);
                 if (elIdx) {
                     const val = parseInt(elIdx.value) || 0;
-                    if (val > 0) { hasAccText = true; tLocal += `- ${item}: ${val} ชิ้น\n`; }
+                    if (val > 0) { hasAccText = true; tLocal += `- ${item}: ${val} ${unitOf('tailoring', item)}\n`; }
                 }
             });
             if (tLocal) accText += `[Tailoring Tools]\n${tLocal}\n`;
