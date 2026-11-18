@@ -5,7 +5,8 @@
 //
 // เส้นทาง (GET เท่านั้น):
 //   /sku-list            → { count, updated, skus: ["SKU", ...] }          (ใช้กับ autocomplete)
-//   /sku-list?names=1    → { count, updated, items: [{sku, name, category}, ...] }
+//   /sku-list?names=1    → { count, updated, items: [{sku, name, category, parent}, ...] }   (parent=true คือสินค้าหลัก ไม่ใช่ตัวแยกไซซ์)
+//   /sku-list?parents=1  → { count, updated, items: [{sku, category}, ...] }   เฉพาะ Parent SKU (parent_product_id ว่าง)
 //   /version             → ข้อมูลเวอร์ชัน (ไม่เรียก API ต้นทาง)
 //
 // ต้นทาง: GET /api/v1/storehub/products?real_products_only=true&include_deleted=false&limit=5000
@@ -13,7 +14,7 @@
 // แคช: Cache API ของ Cloudflare 6 ชั่วโมง (ข้อมูลต้นทางอัปเดตคืนละครั้งหลัง 03:15)
 //      บังคับดึงใหม่: /sku-list?refresh=1&k=<REFRESH_KEY>   (ตั้ง REFRESH_KEY เป็น Secret ถ้าต้องการ)
 
-const BUILD = 'sku-proxy-2026-10-23-1';
+const BUILD = 'sku-proxy-2026-11-18-2';
 const UPSTREAM = 'https://data-api-e65n6ojgpa-as.a.run.app/api/v1/storehub/products';
 const CACHE_TTL_SEC = 6 * 60 * 60;
 const PAGE_LIMIT = 5000;
@@ -52,11 +53,26 @@ async function fetchAllProducts(apiKey) {
       if (p.sku_status !== 'ok') continue; // ไม่มี SKU ใน StoreHub → ไม่เอา
       const sku = String(p.sku || '').trim();
       if (!sku) continue;
-      items.push({ sku, name: p.product_name || '', category: p.category || '' });
+      // parent_product_id ว่าง = สินค้าหลัก (Parent) · มีค่า = ตัวลูกแยกไซซ์/สี
+      items.push({ sku, name: p.product_name || '', category: p.category || '', parent: !p.parent_product_id, _pid: p.product_id || '', _ppid: p.parent_product_id || '' });
     }
     cursor = j.next_cursor || null;
     if (!cursor) break;
   }
+  // ลูกที่ Parent ใน StoreHub ไม่ได้ตั้ง SKU (Parent จึงไม่อยู่ในรายการ) → สร้างรหัส Parent จากลูกโดยตัดท่อนไซซ์ท้ายออก
+  const keptIds = new Set(items.map((it) => it._pid).filter(Boolean));
+  const haveSku = new Set(items.map((it) => it.sku.toUpperCase()));
+  const synth = [];
+  for (const it of items) {
+    if (!it._ppid || keptIds.has(it._ppid) || !it.sku.includes('-')) continue;
+    const base = it.sku.replace(/-[^-]+$/, '');
+    if (!base || haveSku.has(base.toUpperCase())) continue;
+    haveSku.add(base.toUpperCase());
+    synth.push({ sku: base, name: it.name.replace(/\s*\([^)]*\)\s*$/, ''), category: it.category, parent: true, derived: true });
+  }
+  items.push(...synth);
+  for (const it of items) { delete it._pid; delete it._ppid; }
+
   // กันซ้ำ (SKU เดียวกันหลาย product_id) และเรียงตามตัวอักษร
   const seen = new Set();
   const unique = items.filter((it) => (seen.has(it.sku) ? false : (seen.add(it.sku), true)));
@@ -82,6 +98,7 @@ export default {
     }
 
     const wantNames = url.searchParams.get('names') === '1';
+    const wantParents = url.searchParams.get('parents') === '1';
     const forceRefresh =
       url.searchParams.get('refresh') === '1' &&
       env.REFRESH_KEY &&
@@ -89,7 +106,7 @@ export default {
 
     // แคชทั้งก้อน (รวมชื่อ) ไว้ key เดียว แล้วค่อยตัดรูปแบบตอนตอบ
     const cache = caches.default;
-    const cacheKey = new Request('https://sku-proxy.cache/products-all', { method: 'GET' });
+    const cacheKey = new Request('https://sku-proxy.cache/products-all-v3', { method: 'GET' });
 
     let payload = null;
     if (!forceRefresh) {
@@ -115,9 +132,15 @@ export default {
       );
     }
 
-    const body = wantNames
-      ? { count: payload.count, updated: payload.updated, items: payload.items }
-      : { count: payload.count, updated: payload.updated, skus: payload.items.map((it) => it.sku) };
+    let body;
+    if (wantParents) {
+      const parents = payload.items.filter((it) => it.parent).map((it) => ({ sku: it.sku, category: it.category }));
+      body = { count: parents.length, updated: payload.updated, items: parents };
+    } else if (wantNames) {
+      body = { count: payload.count, updated: payload.updated, items: payload.items };
+    } else {
+      body = { count: payload.count, updated: payload.updated, skus: payload.items.map((it) => it.sku) };
+    }
 
     return json(body, 200, {
       'Cache-Control': `public, max-age=${CACHE_TTL_SEC}`,

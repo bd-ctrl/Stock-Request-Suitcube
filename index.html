@@ -579,8 +579,9 @@
 
     <script>
         // ===== SKU AUTOCOMPLETE =====
-        const APP_VERSION = '2026-10-29-1';
+        const APP_VERSION = '2026-11-18-1';
         let skuList = [];
+        let skuApiCategory = {}; // SKU → หมวดจาก StoreHub (ใช้แยกรองเท้าออกจากเครื่องประดับ)
 
         // แหล่งหลัก: Worker sku-proxy (ดึงแคตตาล็อกสินค้าจาก Cubic Data Lake API · key อยู่ฝั่ง Worker ไม่อยู่ในหน้านี้)
         // ใส่ URL ที่ได้หลัง deploy เช่น 'https://sku-proxy.<subdomain>.workers.dev/sku-list'
@@ -590,20 +591,33 @@
 
         async function loadSKUFromProxy() {
             if (!SKU_LIST_URL) throw new Error('SKU_LIST_URL not set');
-            const res = await fetch(SKU_LIST_URL, { cache: 'no-store' });
+            // ?parents=1 = เฉพาะ Parent SKU (ไม่มีตัวแยกไซซ์) พร้อมหมวดของ StoreHub
+            const res = await fetch(SKU_LIST_URL + '?parents=1', { cache: 'no-store' });
             if (!res.ok) throw new Error('proxy HTTP ' + res.status);
             const j = await res.json();
-            const list = Array.isArray(j.skus) ? j.skus : [];
-            if (list.length === 0) throw new Error('proxy returned empty list');
-            return list.map(s => String(s).trim()).filter(Boolean);
+            const items = Array.isArray(j.items) ? j.items : [];
+            if (items.length === 0) throw new Error('proxy returned empty list');
+            const map = {};
+            const list = [];
+            items.forEach(it => {
+                const s = String(it.sku || '').trim();
+                if (!s) return;
+                list.push(s);
+                map[s.toUpperCase()] = String(it.category || '');
+            });
+            skuApiCategory = map;
+            return list;
         }
 
         async function loadSKUFromCSV() {
             const res = await fetch(SKU_FALLBACK_CSV_URL);
             const text = await res.text();
-            return text.split('\n')
+            const all = text.split('\n')
                 .map(line => line.trim().replace(/^"|"$/g, ''))
                 .filter((v, i) => i > 0 && v.length > 0 && v !== 'SKU');
+            // ตัดตัวแยกไซซ์ออก: ถ้ารหัสที่ตัดท่อนสุดท้ายออกแล้วยังมีอยู่ในรายการ แปลว่าตัวนี้เป็นลูก
+            const set = new Set(all.map(s => s.toUpperCase()));
+            return all.filter(s => !set.has(s.toUpperCase().replace(/-[^-]+$/, '')) || !s.includes('-'));
         }
 
         async function loadSKUList() {
@@ -654,20 +668,17 @@
             dropdown.style.width = Math.max(rect.width, 280) + 'px';
         }
 
+        // Category ตามรหัส: J = สูท · P = กางเกง · V = เสื้อกั๊ก · SH = เชิ้ต · นอกนั้น = เครื่องประดับ
+        // (รองเท้า: StoreHub จัดหมวด Shoes ไว้ → ใช้หมวด Shoes เพื่อให้มีช่องไซซ์ 39–46)
         function detectCategoryFromSKU(sku) {
-            const s = sku.toUpperCase().trim();
-            // Accessories prefixes
-            const accessoryPrefixes = ['SP-', 'BT-', 'CL-', 'LP-', 'NT-'];
-            if (accessoryPrefixes.some(p => s.startsWith(p))) return 'accessory';
-            // Shirt
-            if (s.includes('-SH-') || s.endsWith('-SH') || s.startsWith('SH-') || /^SH\d/.test(s)) return 'shirt';
-            // Pant
-            if (/-P-\d/.test(s) || s.endsWith('-P')) return 'pant';
-            // Vest
-            if (/-V-\d/.test(s) || s.endsWith('-V')) return 'vest';
-            // Jacket
-            if (/-J-\d/.test(s) || s.endsWith('-J')) return 'jacket';
-            return null;
+            const s = String(sku || '').toUpperCase().trim();
+            if (!s) return null;
+            if (/-SH(-|$)/.test(s) || /^SH[-\d]/.test(s)) return 'shirt';
+            if (/-P(-\d+)?$/.test(s)) return 'pant';
+            if (/-V(-\d+)?$/.test(s)) return 'vest';
+            if (/-J(-\d+)?$/.test(s)) return 'jacket';
+            if (/shoes/i.test(skuApiCategory[s] || '')) return 'shoes';
+            return 'accessory';
         }
 
         function selectSKU(e, sku, rowId) {
