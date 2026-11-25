@@ -579,7 +579,7 @@
 
     <script>
         // ===== SKU AUTOCOMPLETE =====
-        const APP_VERSION = '2026-11-18-1';
+        const APP_VERSION = '2026-11-25-1';
         let skuList = [];
         let skuApiCategory = {}; // SKU → หมวดจาก StoreHub (ใช้แยกรองเท้าออกจากเครื่องประดับ)
 
@@ -685,9 +685,10 @@
             e.preventDefault();
             const p = products.find(x => x.id === rowId);
             if (p) {
+                const hadSizes = !!accSizes(p);
                 p.sku = sku;
                 const detectedType = detectCategoryFromSKU(sku);
-                if (detectedType && detectedType !== p.type) {
+                if (detectedType && (detectedType !== p.type || hadSizes !== !!accSizes({ type: detectedType, sku }))) {
                     p.type = detectedType;
                     p.sizes = {};
                     p.total = 0;
@@ -723,8 +724,16 @@
             },
             vest: [46, 48, 50, 52, 54, 56, 58],
             shoes: [39, 40, 41, 42, 43, 44, 45, 46], // เพิ่มขนาด 45 และ 46 เรียบร้อยแล้ว
+            belt: [105, 110, 115, 120], // เข็มขัด (SKU ขึ้นต้นด้วย BL-)
             accessory: []
         };
+
+        // เครื่องประดับที่มีไซซ์: Category ยังเป็น Accessories แต่มีช่องไซซ์ให้เลือก (ตอนนี้มีเฉพาะเข็มขัด BL-)
+        function accSizes(p) {
+            if (!p || p.type !== 'accessory') return null;
+            if (/^BL-/i.test(String(p.sku || '').trim())) return sizesData.belt;
+            return null;
+        }
 
         // แยกข้อมูลอุปกรณ์สิ้นเปลืองออกเป็น 3 หมวดหมู่ตามสั่ง (ข้อ 1: เปลี่ยน Section 1 เป็น Packaging)
         const accessoriesSectionPackaging = [
@@ -843,7 +852,7 @@
             
             const totalEl = document.getElementById(`total-${id}`);
             if (totalEl) {
-                if (p.type === 'accessory') {
+                if (p.type === 'accessory' && !accSizes(p)) {
                     totalEl.value = p.total || '';
                 } else {
                     totalEl.textContent = p.total;
@@ -936,7 +945,7 @@
             const tbody = document.getElementById('product-table-body');
             tbody.innerHTML = products.map((p, idx) => {
                 let sizeControls = '';
-                if (p.type === 'accessory') {
+                if (p.type === 'accessory' && !accSizes(p)) {
                     sizeControls = `<div class="text-[#D9AE5D] italic text-[14px] font-bold tracking-wide py-2.5 animate-row">ไม่ต้องระบุไซซ์สำหรับหมวดนี้</div>`;
                 } else if (p.type === 'shirt') {
                     sizeControls = `
@@ -962,7 +971,7 @@
                 } else {
                     sizeControls = `
                         <div class="flex flex-wrap gap-2 items-center animate-row">
-                            ${sizesData[p.type].map(s => `
+                            ${(accSizes(p) || sizesData[p.type]).map(s => `
                                 <div class="flex flex-col items-center">
                                     <span class="text-[10px] font-bold text-slate-400 mb-0.5 uppercase font-quicksand">${s}</span>
                                     <input type="tel" inputmode="numeric" pattern="[0-9]*" onfocus="onNumericFocus(this)" onblur="onNumericBlur(this)" id="input-${p.id}-${s}" value="${p.sizes[s] || ''}" onclick="handleInputClick(this, ${p.id}, '${s}')" oninput="filterNumericInput(this); updateSize(${p.id}, '${s}', this.value)" class="bubble-size-input ${p.sizes[s] ? 'has-value' : ''}" placeholder="">
@@ -1010,7 +1019,7 @@
                     </td>
 
                     <td class="p-4 align-top text-center">
-                        ${p.type === 'accessory' ? `
+                        ${(p.type === 'accessory' && !accSizes(p)) ? `
                             <input type="tel" inputmode="numeric" pattern="[0-9]*" onfocus="onNumericFocus(this)" onblur="onNumericBlur(this)" id="total-${p.id}" value="${p.sizes['qty'] || ''}" onclick="handleInputClick(this, ${p.id}, 'qty')" oninput="filterNumericInput(this); updateSize(${p.id}, 'qty', this.value)" placeholder="0" class="bubble-total-badge bg-white border-2 border-[#D9AE5D]/30 text-[#D9AE5D] outline-none focus:border-[#D9AE5D] focus:scale-105 text-center">
                         ` : `
                             <div id="total-${p.id}" class="bubble-total-badge ${badgeColorClass}">
@@ -1332,7 +1341,7 @@
                     Object.entries(p.sizes).forEach(([size, qty]) => {
                         const val = parseInt(qty) || 0;
                         if (val > 0) {
-                            const rowOutput = `${p.sku}-${catCode}-${size} = ${val}\n`;
+                            const rowOutput = accSizes(p) ? `${p.sku}-${size} = ${val}\n` : `${p.sku}-${catCode}-${size} = ${val}\n`;
                             detailText += rowOutput;
                             productListForRawSummary += rowOutput;
                         }
